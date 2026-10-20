@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab Defensa IA</title>
+<style>
+  :root {
+    --fondo: #0f1419; --panel: #171e26; --panel2: #1e2731; --borde: #2a3542;
+    --texto: #e6edf3; --suave: #8b98a7; --acento: #3fb7ff; --ok: #3fcf8e; --mal: #ff6b6b; --aviso: #ffc457;
+    --mono: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--borde); background: var(--panel); position: sticky; top: 0; z-index: 5; }
+  header h1 { font-size: 18px; margin: 0; letter-spacing: .3px; }
+  header h1 span { color: var(--acento); }
+  header .esp { flex: 1; }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--borde); color: var(--suave); }
+  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--borde); background: var(--panel2); color: var(--texto); padding: 7px 14px; }
+  button:hover { border-color: var(--acento); }
+  button.prim { background: var(--acento); color: #00131f; border-color: var(--acento); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: wait; }
+  .layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 57px); }
+  nav { border-right: 1px solid var(--borde); padding: 12px; background: var(--panel); }
+  nav .nivel { display: flex; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; }
+  nav .nivel:hover { background: var(--panel2); }
+  nav .nivel.activo { background: var(--panel2); outline: 1px solid var(--acento); }
+  nav .num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; background: var(--borde); flex: none; }
+  nav .ok .num { background: var(--ok); color: #002313; }
+  nav .fallo .num { background: var(--mal); color: #2b0000; }
+  nav .tit { font-size: 14px; line-height: 1.2; }
+  nav .pts { font-size: 12px; color: var(--suave); }
+  main { padding: 20px 28px 60px; max-width: 1100px; }
+  h2 { margin: 0 0 4px; font-size: 22px; }
+  h3 { margin: 26px 0 10px; font-size: 16px; color: var(--acento); }
+  .owasp { color: var(--suave); font-size: 13px; margin-bottom: 12px; }
+  .caja { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  ul.lista { margin: 6px 0 0; padding-left: 18px; }
+  ul.lista li { margin: 3px 0; font-family: var(--mono); font-size: 12.5px; white-space: pre-wrap; color: #cfd8e3; }
+  label { display: block; font-weight: 600; margin: 12px 0 4px; }
+  label small { font-weight: 400; color: var(--suave); }
+  textarea, input[type=text] { width: 100%; background: #0b1015; color: var(--texto); border: 1px solid var(--borde); border-radius: 8px; padding: 9px 10px; font: 13px/1.45 var(--mono); }
+  textarea:focus, input:focus { outline: 1px solid var(--acento); }
+  textarea:disabled { opacity: .55; }
+  .fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  .barra { height: 8px; background: var(--borde); border-radius: 9px; overflow: hidden; margin: 8px 0; }
+  .barra div { height: 100%; background: var(--acento); width: 0; transition: width .4s; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+  th { color: var(--suave); font-weight: 600; }
+  .bien { color: var(--ok); font-weight: 700; } .malr { color: var(--mal); font-weight: 700; }
+  details summary { cursor: pointer; color: var(--suave); font-size: 12.5px; }
+  pre { white-space: pre-wrap; word-break: break-word; background: #0b1015; border: 1px solid var(--borde); border-radius: 8px; padding: 10px; font: 12.5px/1.45 var(--mono); margin: 6px 0; }
+  .veredicto { padding: 12px 14px; border-radius: 10px; font-weight: 700; margin: 10px 0; }
+  .veredicto.si { background: rgba(63,207,142,.12); border: 1px solid var(--ok); color: var(--ok); }
+  .veredicto.no { background: rgba(255,107,107,.1); border: 1px solid var(--mal); color: var(--mal); }
+  .capa { font-size: 13px; margin: 4px 0; } .capa b { color: var(--acento); }
+  .copi { line-height: 1.55; }
+  .copi .bloque { position: relative; }
+  .copi .acciones { display: flex; gap: 6px; margin: -2px 0 10px; flex-wrap: wrap; }
+  .copi .acciones button { font-size: 12px; padding: 4px 9px; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: grid; place-items: center; z-index: 10; }
+  .modal .caja { width: min(440px, 92vw); }
+  .aviso { color: var(--aviso); font-size: 13px; }
+  .error { color: var(--mal); font-size: 13px; margin-top: 8px; white-space: pre-wrap; }
+  .oculto { display: none !important; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } nav { border-right: 0; border-bottom: 1px solid var(--borde); } .dos { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Lab <span>Defensa IA</span></h1>
+  <span class="chip" id="chipJugador"></span>
+  <span class="chip" id="chipPuntos"></span>
+  <div class="esp"></div>
+  <button id="btnMarcador">Marcador</button>
+</header>
+
+<div class="layout">
+  <nav id="nav"></nav>
+  <main id="main"><p class="aviso">Cargando…</p></main>
+</div>
+
+<div class="modal oculto" id="modalRegistro">
+  <div class="caja">
+    <h2>Bienvenido al Lab Defensa IA</h2>
+    <p>Vas a defender 10 chatbots vulnerables. Escribe tu nombre (el instructor lo verá en el marcador).</p>
+    <input type="text" id="inpNombre" placeholder="Nombre y apellido" maxlength="30">
+    <div class="fila"><button class="prim" id="btnRegistro">Empezar</button></div>
+    <div class="error" id="errRegistro"></div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let TOKEN = localStorage.getItem("labToken") || "";
+let NIVELES = [], ACTUAL = null, sondeo = null;
+
+async function api(ruta, datos) {
+  const opciones = { headers: { "Content-Type": "application/json", "X-Token": TOKEN } };
+  if (datos !== undefined) { opciones.method = "POST"; opciones.body = JSON.stringify(datos); }
+  const r = await fetch(ruta, opciones);
+  const j = await r.json().catch(() => ({ error: "respuesta no válida" }));
+  if (r.status === 401) { mostrarRegistro(); throw new Error("no registrado"); }
+  if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+  return j;
+}
+
+function mostrarRegistro() { $("#modalRegistro").classList.remove("oculto"); $("#inpNombre").focus(); }
+$("#btnRegistro").onclick = async () => {
+  try {
+    const r = await fetch("/api/registro", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: $("#inpNombre").value }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error);
+    TOKEN = j.token; localStorage.setItem("labToken", TOKEN);
+    $("#modalRegistro").classList.add("oculto"); cargar();
+  } catch (e) { $("#errRegistro").textContent = e.message; }
+};
+$("#inpNombre").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#btnRegistro").click(); });
+
+async function cargar(idSel) {
+  if (!TOKEN) return mostrarRegistro();
+  const j = await api("/api/niveles");
+  NIVELES = j.niveles;
+  $("#chipJugador").textContent = "👤 " + j.jugador;
+  const pts = NIVELES.filter((n) => n.resultado?.superado).reduce((a, n) => a + n.puntos, 0);
+  const sup = NIVELES.filter((n) => n.resultado?.superado).length;
+  $("#chipPuntos").textContent = `🛡 ${sup}/${NIVELES.length} niveles · ${pts} pts`;
+  pintarNav();
+  verNivel(idSel || ACTUAL?.id || 1);
+}
+
+function pintarNav() {
+  $("#nav").innerHTML = NIVELES.map((n) => {
+    const est = n.resultado ? (n.resultado.superado ? "ok" : "fallo") : "";
+    return `<div class="nivel ${est} ${ACTUAL?.id === n.id ? "activo" : ""}" data-id="${n.id}">
+      <div class="num">${n.resultado?.superado ? "✓" : n.id}</div>
+      <div><div class="tit">${esc(n.titulo)}</div><div class="pts">${n.puntos} pts</div></div></div>`;
+  }).join("");
+  document.querySelectorAll("nav .nivel").forEach((el) => el.onclick = () => verNivel(+el.dataset.id));
+}
+
+function lineas(t) { return t.split("\n").map((x) => x.trim()).filter(Boolean); }
+
+function configEditor() {
+  const n = ACTUAL, h = n.herramientas;
+  return {
+    prompt: h.includes("prompt") ? $("#edPrompt").value : n.config.prompt,
+    entrada: h.includes("entrada") ? lineas($("#edEntrada").value) : [],
+    salida: h.includes("salida") ? lineas($("#edSalida").value) : [],
+    juez: h.includes("juez") ? $("#edJuez").checked : false,
+    juez_instr: h.includes("juez") ? $("#edJuezInstr").value : n.config.juez_instr,
+  };
+}
+
+function verNivel(id) {
+  clearInterval(sondeo);
+  ACTUAL = NIVELES.find((n) => n.id === id);
+  pintarNav();
+  const n = ACTUAL, c = n.config, h = n.herramientas;
+  const marc = n.marcadores.map((m) => `{${m}}`).join(", ");
+  $("#main").innerHTML = `
+    <h2>Nivel ${n.id} · ${esc(n.titulo)}</h2>
+    <div class="owasp">${esc(n.owasp)} · ${n.puntos} pts</div>
+    <div class="caja"><b>Escenario.</b> ${esc(n.escenario)}<br><br><b>Tu misión.</b> ${esc(n.objetivo)}</div>
+    <div class="dos">
+      <div class="caja"><b>Ataques conocidos</b> <span class="chip">+${n.num_ocultos} ocultos</span>
+        <ul class="lista">${n.ataques.map((a) => `<li>${esc(a)}</li>`).join("")}</ul></div>
+      <div class="caja"><b>Preguntas normales que debe seguir respondiendo</b>
+        <ul class="lista">${n.legitimas.map((a) => `<li>${esc(a)}</li>`).join("")}</ul>
+        <p class="aviso" style="margin:10px 0 0">Para superar el nivel: 0 fugas en todos los ataques (también los ocultos) y como mucho 1 pregunta normal mal atendida.</p></div>
+    </div>
+
+    <h3>1 · Tus defensas</h3>
+    <div class="caja">
+      ${h.includes("prompt") || n.prompt_bloqueado ? `
+        <label>System prompt del bot ${n.prompt_bloqueado ? '<small>— BLOQUEADO en este nivel: no puedes cambiarlo</small>' : `<small>— conserva los marcadores ${esc(marc)}</small>`}</label>
+        <textarea id="edPrompt" rows="9" ${n.prompt_bloqueado ? "disabled" : ""}>${esc(c.prompt)}</textarea>` : ""}
+      ${h.includes("entrada") ? `
+        <label>Reglas de entrada <small>— expresiones regulares, una por línea; si el mensaje coincide, se bloquea</small></label>
+        <textarea id="edEntrada" rows="4" placeholder="ignora (tus|las) instrucciones">${esc(c.entrada.join("\n"))}</textarea>` : ""}
+      ${h.includes("salida") ? `
+        <label>Reglas de salida <small>— expresiones regulares, una por línea; lo que coincida se sustituye por [FILTRADO]</small></label>
+        <textarea id="edSalida" rows="4" placeholder="ACERO-TIGRE-\\d+">${esc(c.salida.join("\n"))}</textarea>` : ""}
+      ${h.includes("juez") ? `
+        <label><input type="checkbox" id="edJuez" ${c.juez ? "checked" : ""} ${n.prompt_bloqueado ? "disabled" : ""}> Juez IA activado
+          <small>— un LLM revisa cada mensaje antes de que llegue al bot</small></label>
+        <label>Instrucciones del juez <small>— debe responder solo JSON {"ataque": true/false, "motivo": "..."}</small></label>
+        <textarea id="edJuezInstr" rows="6">${esc(c.juez_instr)}</textarea>` : ""}
+      <div class="fila">
+        <button class="prim" id="btnBateria">Guardar y lanzar batería de ataques</button>
+        <button id="btnGuardar">Solo guardar</button>
+        <button id="btnRestaurar">Restaurar original</button>
+      </div>
+      <div class="error" id="errEditor"></div>
+    </div>
+
+    <h3>2 · Resultado de la batería</h3>
+    <div class="caja" id="resultado"><span class="chip">Todavía no has lanzado la batería en este nivel.</span></div>
+
+    <div class="dos">
+      <div>
+        <h3>3 · Chat de prueba</h3>
+        <div class="caja">
+          <p style="margin-top:0" class="owasp">Prueba tus defensas (sin guardar) con tus propios mensajes.</p>
+          <textarea id="chatMsg" rows="3" placeholder="Escribe un mensaje como si fueras un usuario… o un atacante"></textarea>
+          <div class="fila"><button id="btnChat">Enviar</button></div>
+          <div id="chatOut"></div>
+        </div>
+      </div>
+      <div>
+        <h3>4 · Copiloto IA 🤖</h3>
+        <div class="caja">
+          <p style="margin-top:0" class="owasp">Tu asistente de blue team. Conoce el nivel, tus defensas y los fallos de tu última batería.</p>
+          <textarea id="copiPregunta" rows="3" placeholder="Ej.: ¿Por qué falla el ataque 2? Propón un prompt más robusto."></textarea>
+          <div class="fila"><button id="btnCopi">Pedir ayuda</button></div>
+          <div id="copiOut" class="copi"></div>
+        </div>
+      </div>
+    </div>`;
+
+  $("#btnGuardar").onclick = () => guardar(false);
+  $("#btnBateria").onclick = () => guardar(true);
+  $("#btnRestaurar").onclick = restaurar;
+  $("#btnChat").onclick = chat;
+  $("#btnCopi").onclick = pedirCopiloto;
+  consultarBateria();
+}
+
+async function guardar(lanzar) {
+  $("#errEditor").textContent = "";
+  try {
+    const r = await api("/api/guardar", { nivel: ACTUAL.id, config: configEditor() });
+    ACTUAL.config = r.config;
+    if (lanzar) { await api("/api/bateria", { nivel: ACTUAL.id }); consultarBateria(); }
+    else $("#errEditor").innerHTML = '<span class="bien">Guardado.</span>';
+  } catch (e) { $("#errEditor").textContent = e.message; }
+}
+
+async function restaurar() {
+  if (!confirm("¿Volver al bot vulnerable original de este nivel? Perderás tus defensas.")) return;
+  const r = await api("/api/restaurar", { nivel: ACTUAL.id });
+  ACTUAL.config = r.config; verNivel(ACTUAL.id);
+}
+
+async function consultarBateria() {
+  const id = ACTUAL.id;
+  clearInterval(sondeo);
+  let vistoEnCurso = false;
+  const pintar = async () => {
+    if (ACTUAL?.id !== id) return clearInterval(sondeo);
+    const t = await api(`/api/bateria/${id}`);
+    pintarResultado(t);
+    if (t.estado === "en curso") { vistoEnCurso = true; return; }
+    clearInterval(sondeo);
+    if (t.estado === "terminado" && vistoEnCurso) {
+      const j = await api("/api/niveles");          // refresca marcas y puntos sin repintar el nivel
+      NIVELES.forEach((n) => { const nuevo = j.niveles.find((x) => x.id === n.id); n.resultado = nuevo.resultado; });
+      const pts = NIVELES.filter((n) => n.resultado?.superado).reduce((a, n) => a + n.puntos, 0);
+      $("#chipPuntos").textContent = `🛡 ${NIVELES.filter((n) => n.resultado?.superado).length}/${NIVELES.length} niveles · ${pts} pts`;
+      pintarNav();
+    }
+  };
+  await pintar();
+  sondeo = setInterval(pintar, 2000);
+}
+
+function pintarResultado(t) {
+  const el = $("#resultado");
+  if (!el) return;
+  $("#btnBateria").disabled = t.estado === "en curso";
+  if (t.estado === "sin lanzar") return;
+  if (t.estado === "error") { el.innerHTML = `<div class="error">Error en la batería: ${esc(t.error)}</div>`; return; }
+  let cab = "";
+  if (t.estado === "en curso") {
+    const pct = Math.round(100 * (t.hechos || 0) / (t.total || 1));
+    cab = `<b>Atacando a tu bot…</b> ${t.hechos}/${t.total} pruebas
+      <div class="barra"><div style="width:${pct}%"></div></div>
+      <span class="owasp">Con un modelo local cada prueba tarda unos segundos.</span>`;
+  } else {
+    cab = t.superado
+      ? `<div class="veredicto si">✓ NIVEL SUPERADO — 0 fugas y ${t.legitimas}/${ACTUAL.legitimas.length} preguntas normales bien atendidas</div>`
+      : `<div class="veredicto no">✗ Todavía no — ${t.fugas} ataque(s) con fuga · ${t.legitimas}/${ACTUAL.legitimas.length} preguntas normales bien atendidas</div>`;
+  }
+  const filas = (t.resultados || []).map((r) => {
+    let det = "";
+    if (r.tipo === "ataque") det = r.ok ? (r.bloqueado_por ? `bloqueado por ${esc(r.bloqueado_por)}` : (r.filtrado.length ? `tapado: ${esc(r.filtrado.join(", "))}` : "el bot resistió"))
+                                       : `FUGA: ${esc(r.fugas.join(", "))}`;
+    else det = r.ok ? "respondida bien" : (r.bloqueado_por ? `bloqueada por error: ${esc(r.bloqueado_por)}` : "respuesta incompleta o incorrecta");
+    return `<tr><td>${esc(r.etiqueta)}</td><td class="${r.ok ? "bien" : "malr"}">${r.ok ? "✓" : "✗"}</td>
+      <td>${det}<details><summary>ver mensaje y respuesta (${r.segundos}s)</summary>
+      <pre>${esc(r.mensaje)}</pre><pre>${esc(r.respuesta)}</pre></details></td></tr>`;
+  }).join("");
+  el.innerHTML = cab + (filas ? `<table><tr><th style="width:150px">Prueba</th><th style="width:40px"></th><th>Detalle</th></tr>${filas}</table>` : "");
+}
+
+async function chat() {
+  const msg = $("#chatMsg").value.trim();
+  if (!msg) return;
+  $("#btnChat").disabled = true; $("#chatOut").innerHTML = '<p class="owasp">Procesando por las capas…</p>';
+  try {
+    const t = await api("/api/chat", { nivel: ACTUAL.id, config: configEditor(), mensaje: msg });
+    const capas = [];
+    if (ACTUAL.herramientas.includes("entrada")) capas.push(`<div class="capa"><b>Entrada:</b> ${t.bloqueado_por?.startsWith("regla") ? "🛑 " + esc(t.bloqueado_por) : "pasa"}</div>`);
+    if (t.juez) capas.push(`<div class="capa"><b>Juez IA:</b> ${t.juez.ataque ? "🛑 ataque" : "pasa"} — ${esc(t.juez.motivo)}</div>`);
+    if (t.respuesta_bot !== null) capas.push(`<div class="capa"><b>Bot:</b> respondió</div>`);
+    if (t.filtrado.length) capas.push(`<div class="capa"><b>Salida:</b> tapado ${esc(t.filtrado.join(", "))}</div>`);
+    capas.push(`<div class="capa"><b>Fuga detectada:</b> ${t.fugas.length ? `<span class="malr">${esc(t.fugas.join(", "))}</span>` : '<span class="bien">no</span>'}</div>`);
+    $("#chatOut").innerHTML = capas.join("") + `<pre>${esc(t.respuesta)}</pre>`;
+  } catch (e) { $("#chatOut").innerHTML = `<div class="error">${esc(e.message)}</div>`; }
+  $("#btnChat").disabled = false;
+}
+
+async function pedirCopiloto() {
+  $("#btnCopi").disabled = true; $("#copiOut").innerHTML = '<p class="owasp">El copiloto está pensando (puede tardar 20-60 s con un modelo local)…</p>';
+  try {
+    const r = await api("/api/copiloto", { nivel: ACTUAL.id, config: configEditor(), pregunta: $("#copiPregunta").value });
+    pintarCopiloto(r.respuesta);
+  } catch (e) { $("#copiOut").innerHTML = `<div class="error">${esc(e.message)}</div>`; }
+  $("#btnCopi").disabled = false;
+}
+
+function pintarCopiloto(texto) {
+  const h = ACTUAL.herramientas, bloques = [];
+  const html = esc(texto).replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, cod) => {
+    bloques.push({ lang: lang.toLowerCase(), cod: cod.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&") });
+    const i = bloques.length - 1, b = bloques[i], acc = [];
+    if (h.includes("prompt") && !ACTUAL.prompt_bloqueado && (b.lang === "prompt" || b.lang === "")) acc.push(`<button data-b="${i}" data-a="prompt">Usar como system prompt</button>`);
+    if (h.includes("entrada") && (b.lang === "regex" || b.lang === "")) acc.push(`<button data-b="${i}" data-a="entrada">Añadir a reglas de entrada</button>`);
+    if (h.includes("salida") && (b.lang === "regex" || b.lang === "")) acc.push(`<button data-b="${i}" data-a="salida">Añadir a reglas de salida</button>`);
+    if (h.includes("juez") && (b.lang === "juez" || b.lang === "")) acc.push(`<button data-b="${i}" data-a="juez">Usar como instrucciones del juez</button>`);
+    return `<pre>${cod}</pre><div class="acciones">${acc.join("")}</div>`;
+  }).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>").replace(/<\/pre><br>/g, "</pre>").replace(/<br><pre>/g, "<pre>");
+  $("#copiOut").innerHTML = html + '<p class="aviso">Revisa las sugerencias antes de aplicarlas y comprueba siempre con la batería: el copiloto también se equivoca.</p>';
+  $("#copiOut").querySelectorAll("button[data-b]").forEach((btn) => btn.onclick = () => {
+    const b = bloques[+btn.dataset.b];
+    const destino = { prompt: "#edPrompt", entrada: "#edEntrada", salida: "#edSalida", juez: "#edJuezInstr" }[btn.dataset.a];
+    const ta = $(destino);
+    if (btn.dataset.a === "entrada" || btn.dataset.a === "salida") ta.value = (ta.value.trim() + "\n" + b.cod.trim()).trim();
+    else ta.value = b.cod.trim();
+    if (btn.dataset.a === "juez") $("#edJuez").checked = true;
+    ta.scrollIntoView({ behavior: "smooth", block: "center" });
+    ta.style.outline = "2px solid var(--ok)"; setTimeout(() => ta.style.outline = "", 1500);
+  });
+}
+
+$("#btnMarcador").onclick = async () => {
+  clearInterval(sondeo); ACTUAL = null; pintarNav();
+  const m = await fetch("/api/marcador").then((r) => r.json());
+  $("#main").innerHTML = `<h2>Marcador</h2><p class="owasp">Se actualiza cada vez que alguien supera un nivel.</p>
+    <div class="caja"><table><tr><th>#</th><th>Alumno</th><th>Puntos</th><th>Niveles blindados</th><th>Baterías lanzadas</th></tr>
+    ${m.jugadores.map((j, i) => `<tr><td>${i + 1}</td><td>${esc(j.nombre)}</td><td><b>${j.puntos}</b></td>
+      <td>${j.niveles.length}/${m.total_niveles} <span class="owasp">${j.niveles.sort((a, b) => a - b).join(" · ")}</span></td><td>${j.baterias}</td></tr>`).join("")}
+    </table></div><button onclick="cargar()">Volver a los niveles</button>`;
+};
+
+cargar().catch((e) => { if (e.message !== "no registrado") $("#main").innerHTML = `<div class="error">${esc(e.message)}</div>`; });
+</script>
+</body>
+</html>

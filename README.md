@@ -1,4 +1,4 @@
-# Lab Defensa IA
+# defensa-ia
 
 Laboratorio de **defensa de sistemas de IA asistida por IA** para el curso *Hacking con IA*.
 Cada alumno blinda 10 chatbots vulnerables con cuatro capas (system prompt, reglas de entrada,

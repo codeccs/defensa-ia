@@ -1,0 +1,57 @@
+# Lab Defensa IA - docker compose up -d --build
+# Modelo por defecto: qwen2.5:3b (unos 2 GB). Para cambiarlo: LLM_MODELO=qwen2.5:7b docker compose up -d
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: labia-ollama
+    volumes:
+      - ollama:/root/.ollama
+    environment:
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_KEEP_ALIVE=24h
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+    # Con GPU NVIDIA (y nvidia-container-toolkit instalado), descomenta:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  modelo:  # descarga el modelo la primera vez y termina
+    image: ollama/ollama:latest
+    container_name: labia-modelo
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["ollama", "pull", "${LLM_MODELO:-qwen2.5:3b}"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
+  lab:
+    build: .
+    container_name: labia-web
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - LLM_MODELO=${LLM_MODELO:-qwen2.5:3b}
+      - LLM_PARALELO=2
+      - DB_PATH=/data/lab.db
+    volumes:
+      - datos:/data
+    ports:
+      - "${LAB_PUERTO:-8000}:8000"
+    depends_on:
+      modelo:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  ollama:
+  datos:

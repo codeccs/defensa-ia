@@ -15,7 +15,7 @@ y sin coste.
 ## Instalación en Kali (un comando)
 
 ```bash
-git clone https://github.com/codeccs/lab-defensa-ia.git 
+git clone https://github.com/codeccs/defensa-ia.git 
 cd defensa-ia
 bash instalar.sh
 ```

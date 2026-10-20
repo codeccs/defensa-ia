@@ -16,7 +16,7 @@ y sin coste.
 
 ```bash
 git clone https://github.com/codeccs/lab-defensa-ia.git 
-cd lab-defensa-ia
+cd defensa-ia
 bash instalar.sh
 ```
 
